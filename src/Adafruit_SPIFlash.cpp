@@ -31,59 +31,36 @@
 #define LOGICAL_BLOCK_SIZE 512
 
 #if SPIFLASH_DEBUG
-#define SPIFLASH_LOG(_block, _count)                                           \
-  do {                                                                         \
-    Serial.print(__FUNCTION__);                                                \
-    Serial.print(": lba = ");                                                  \
-    Serial.print(_block);                                                      \
-    if (_count) {                                                              \
-      Serial.print(" count = ");                                               \
-      Serial.print(_count);                                                    \
-    }                                                                          \
-    Serial.println();                                                          \
+#define SPIFLASH_LOG(_block, _count) \
+  do {                               \
+    Serial.print(__FUNCTION__);      \
+    Serial.print(": lba = ");        \
+    Serial.print(_block);            \
+    if (_count) {                    \
+      Serial.print(" count = ");     \
+      Serial.print(_count);          \
+    }                                \
+    Serial.println();                \
   } while (0)
 #else
 #define SPIFLASH_LOG(_sector, _count)
 #endif
 
-Adafruit_SPIFlash::Adafruit_SPIFlash() : Adafruit_SPIFlashBase() {
-  _cache_en = true;
-  _cache = NULL;
-}
+Adafruit_SPIFlash::Adafruit_SPIFlash() : Adafruit_SPIFlashBase() {}
 
 Adafruit_SPIFlash::Adafruit_SPIFlash(Adafruit_FlashTransport *transport,
                                      bool useCache)
-    : Adafruit_SPIFlashBase(transport) {
-  _cache_en = useCache;
-  _cache = NULL;
-}
+    : Adafruit_SPIFlashBase(transport) {}
 
 bool Adafruit_SPIFlash::begin(SPIFlash_Device_t const *flash_devs,
                               size_t count) {
   bool ret = Adafruit_SPIFlashBase::begin(flash_devs, count);
-
-#ifndef __AVR__
-  // Use cache if not FRAM
-  // Note: Skip caching if AVR. Comment out since new cache on AVR seems to
-  // corrupt memory rather than safely return NULL
-  if (_flash_dev && !_flash_dev->is_fram) {
-    if (_cache_en && !_cache) {
-      _cache = new Adafruit_FlashCache;
-    }
-  }
-#endif
-
   return ret;
 }
 
 void Adafruit_SPIFlash::end(void) {
   // invoke base class end
   Adafruit_SPIFlashBase::end();
-
-  if (_cache != NULL) {
-    delete _cache;
-    _cache = NULL;
-  }
 }
 
 //--------------------------------------------------------------------+
@@ -99,59 +76,29 @@ uint32_t Adafruit_SPIFlash::sectorCount() {
 
 bool Adafruit_SPIFlash::readSector(uint32_t block, uint8_t *dst) {
   SPIFLASH_LOG(block, 1);
-
-  if (_cache) {
-    return _cache->read(this, block * LOGICAL_BLOCK_SIZE, dst,
-                        LOGICAL_BLOCK_SIZE);
-  } else {
-    // FRAM does not need caching
-    return this->readBuffer(block * LOGICAL_BLOCK_SIZE, dst,
-                            LOGICAL_BLOCK_SIZE) > 0;
-  }
+  return _cache.read(this, block * LOGICAL_BLOCK_SIZE, dst, LOGICAL_BLOCK_SIZE);
 }
 
 bool Adafruit_SPIFlash::syncDevice() {
   SPIFLASH_LOG(0, 0);
-
-  if (_cache) {
-    return _cache->sync(this);
-  } else {
-    return true;
-  }
+  return _cache.sync(this);
 }
 
 bool Adafruit_SPIFlash::writeSector(uint32_t block, const uint8_t *src) {
   SPIFLASH_LOG(block, 1);
-
-  if (_cache) {
-    return _cache->write(this, block * LOGICAL_BLOCK_SIZE, src,
-                         LOGICAL_BLOCK_SIZE);
-  } else {
-    return this->writeBuffer(block * LOGICAL_BLOCK_SIZE, src,
-                             LOGICAL_BLOCK_SIZE) > 0;
-  }
+  return _cache.write(this, block * LOGICAL_BLOCK_SIZE, src,
+                      LOGICAL_BLOCK_SIZE);
 }
 
 bool Adafruit_SPIFlash::readSectors(uint32_t block, uint8_t *dst, size_t nb) {
   SPIFLASH_LOG(block, nb);
-
-  if (_cache) {
-    return _cache->read(this, block * LOGICAL_BLOCK_SIZE, dst,
-                        LOGICAL_BLOCK_SIZE * nb);
-  } else {
-    return this->readBuffer(block * LOGICAL_BLOCK_SIZE, dst,
-                            LOGICAL_BLOCK_SIZE * nb) > 0;
-  }
+  return _cache.read(this, block * LOGICAL_BLOCK_SIZE, dst,
+                     LOGICAL_BLOCK_SIZE * nb);
 }
 
 bool Adafruit_SPIFlash::writeSectors(uint32_t block, const uint8_t *src,
                                      size_t nb) {
   SPIFLASH_LOG(block, nb);
-  if (_cache) {
-    return _cache->write(this, block * LOGICAL_BLOCK_SIZE, src,
-                         LOGICAL_BLOCK_SIZE * nb);
-  } else {
-    return this->writeBuffer(block * LOGICAL_BLOCK_SIZE, src,
-                             LOGICAL_BLOCK_SIZE * nb) > 0;
-  }
+  return _cache.write(this, block * LOGICAL_BLOCK_SIZE, src,
+                      LOGICAL_BLOCK_SIZE * nb);
 }

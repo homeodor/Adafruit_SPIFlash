@@ -48,7 +48,7 @@
 #define FatVolume FatFileSystem
 #define File32 File
 
-#endif // SD_FAT_VERSION
+#endif  // SD_FAT_VERSION
 
 #if FAT12_SUPPORT == 0
 #error FAT12_SUPPORT must be set to 1 in SdFat SdFatConfig.h. Make sure you use the Adafruit Fork at 'https://github.com/adafruit/SdFat'
@@ -61,7 +61,7 @@
 // Instances of this class will use 4kB of RAM as a block cache.
 class Adafruit_SPIFlash : public FsBlockDeviceInterface,
                           public Adafruit_SPIFlashBase {
-public:
+ public:
   Adafruit_SPIFlash();
   Adafruit_SPIFlash(Adafruit_FlashTransport *transport, bool useCache = true);
   ~Adafruit_SPIFlash() {}
@@ -69,7 +69,7 @@ public:
   bool begin(SPIFlash_Device_t const *flash_devs = NULL, size_t count = 1);
   void end(void);
 
-  bool isCached(void) { return _cache_en && (_cache != NULL); }
+  bool isCached(void) { return true; }
 
   //------------- SdFat v2 FsBlockDeviceInterface API -------------//
   virtual bool isBusy();
@@ -100,9 +100,8 @@ public:
     return writeSectors(block, src, nb);
   }
 
-private:
-  bool _cache_en;
-  Adafruit_FlashCache *_cache;
+ private:
+  Adafruit_FlashCache _cache;
 };
 
 #endif /* ADAFRUIT_SPIFLASH_H_ */
